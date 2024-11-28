@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/user_provider.dart';
+import 'features/home/controllers/cart_controller.dart';
+import 'features/home/controllers/wishlist_controller.dart';
+import 'controllers/home_controller.dart';
 import 'package:flutter_gaya_2/routes.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -11,22 +16,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DAYA',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => CartController()),
+        ChangeNotifierProvider(create: (_) => WishlistController()),
+        ChangeNotifierProvider(create: (_) => HomeController()),
+      ],
+      child: ScreenUtilInit(
+        designSize: const Size(375, 812), // 设计稿的尺寸
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          return MaterialApp(
+            title: 'Gaya App',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+            ),
+            initialRoute: AppRoutes.splash,
+            onGenerateRoute: AppRoutes.generateRoute,
+          );
+        },
       ),
-      initialRoute: AppRoutes.splash,
-      onGenerateRoute: AppRoutes.generateRoute,
-      builder: (context, child) {
-        ScreenUtil.init(
-          context,
-          designSize: const Size(375, 812),
-          minTextAdapt: true,
-          splitScreenMode: true,
-        );
-        return child!;
-      },
     );
   }
 }

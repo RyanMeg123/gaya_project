@@ -7,6 +7,8 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_gaya_2/services/api_service.dart';
 import 'package:flutter_gaya_2/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_gaya_2/providers/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,45 +29,32 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
         final response = await _apiService.login(
           email: emailController.text,
           password: passwordController.text,
         );
 
-        print('Login response type: ${response.runtimeType}');
-        print('Login response content: $response');
-        print('Access token: ${response['access_token']}');
+        await userProvider.setUserData(response);
 
-        final token = response['access_token'];
-        if (token != null && token is String) {
-          await _authService.saveLoginState(
-            token: token,
-            email: emailController.text,
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
           );
 
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login successful'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-
-            await Future.delayed(const Duration(seconds: 2));
-
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.homePage,
-              (route) => false,
-            );
-          }
-        } else {
-          throw Exception('Invalid token format');
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.homePage,
+            (route) => false,
+            arguments: true,
+          );
         }
       } catch (e) {
         print('Login error: $e');
-        print('mounted $mounted');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

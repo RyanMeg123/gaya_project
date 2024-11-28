@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gaya_2/features/splash/views/splash_page1.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gaya_2/providers/user_provider.dart';
 import 'package:flutter_gaya_2/services/auth_service.dart';
 import 'features/home/controllers/cart_controller.dart';
 import 'features/home/home_page.dart';
@@ -25,50 +27,69 @@ class AppRoutes {
   static const String checkout = '/checkout';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    final authService = AuthService();
-    
     switch (settings.name) {
       case splash:
         return MaterialPageRoute(
-          builder: (context) => FutureBuilder<bool>(
-            future: authService.isLoggedInValid(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SplashPage();
+          builder: (context) => Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              if (!userProvider.hasCheckedLoginState) {
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  await userProvider.initializeUser();
+                });
               }
-              
-              if (snapshot.data == true) {
-                return const HomePage();
+
+              if (userProvider.isLoggedIn) {
+                return FutureBuilder(
+                  future: Future.delayed(const Duration(seconds: 2)),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        Navigator.pushReplacementNamed(context, homePage);
+                      });
+                    }
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacementNamed(context, homePage);
+                      },
+                      child: const SplashPage1(),
+                    );
+                  },
+                );
               }
-              
+
               return const SplashPage();
             },
           ),
         );
 
       case login:
-      case registerEmail:
         return MaterialPageRoute(
-          builder: (context) => FutureBuilder<bool>(
-            future: authService.isLoggedInValid(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              
-              if (snapshot.data == true) {
+          builder: (context) => Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              if (userProvider.isLoggedIn) {
                 return const HomePage();
               }
-              
-              return settings.name == login 
-                  ? const LoginPage() 
-                  : const RegisterEmailPage();
+              return const LoginPage();
+            },
+          ),
+        );
+
+      case registerEmail:
+        return MaterialPageRoute(
+          builder: (context) => Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              if (userProvider.isLoggedIn) {
+                return const HomePage();
+              }
+              return const RegisterEmailPage();
             },
           ),
         );
 
       case homePage:
         return MaterialPageRoute(builder: (_) => const HomePage());
+
       case productSecondary:
         final args = settings.arguments as ProductRouteParameter;
         return MaterialPageRoute(
@@ -76,6 +97,7 @@ class AppRoutes {
             productRouteParameter: args,
           ),
         );
+
       case productDetail:
         final product = settings.arguments as ProductDetail;
         return MaterialPageRoute(
@@ -84,15 +106,35 @@ class AppRoutes {
             cartController: Provider.of<CartController>(context, listen: false),
           ),
         );
+
       case wishlist:
-        return MaterialPageRoute(builder: (_) => const WishlistPage());
+        return MaterialPageRoute(
+          builder: (context) => Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              if (!userProvider.isLoggedIn) {
+                return const LoginPage();
+              }
+              return const WishlistPage();
+            },
+          ),
+        );
+
       case featuredProducts:
         return MaterialPageRoute(builder: (_) => const FeaturedProductsPage());
+
       case checkout:
         final orderItem = settings.arguments as OrderItem;
         return MaterialPageRoute(
-          builder: (context) => CheckoutPage(orderItem: orderItem),
+          builder: (context) => Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              if (!userProvider.isLoggedIn) {
+                return const LoginPage();
+              }
+              return CheckoutPage(orderItem: orderItem);
+            },
+          ),
         );
+
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

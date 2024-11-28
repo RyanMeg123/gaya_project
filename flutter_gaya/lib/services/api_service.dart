@@ -41,16 +41,16 @@ class ApiService {
     required String password,
   }) async {
     try {
-      print('Attempting login with email: $email'); // 添加日志
-      
       final response = await _dio.post('/auth/login', data: {
         'email': email,
         'password': password,
       });
       
-      print('Login response: ${response.data}'); // 添加日志
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
       
-      if (response.statusCode == 200 && response.data != null) {
+      // 直接返回响应数据
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data;
       } else {
         throw Exception('Login failed: Invalid response');
@@ -64,10 +64,6 @@ class ApiService {
         
         if (e.response?.data != null && e.response?.data['message'] != null) {
           throw Exception(e.response?.data['message']);
-        } else if (e.type == DioExceptionType.connectionTimeout) {
-          throw Exception('Connection timeout. Please try again.');
-        } else if (e.type == DioExceptionType.connectionError) {
-          throw Exception('Network error. Please check your connection.');
         }
       }
       throw Exception('Login failed: ${e.toString()}');
