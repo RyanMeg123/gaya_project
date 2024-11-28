@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gaya_2/routes.dart';
 import '../../compontents/form_common.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_gaya_2/services/api_service.dart';
 
 class RegisterEmailPage extends StatefulWidget {
   const RegisterEmailPage({super.key});
@@ -18,13 +19,47 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController passwordConfirmController =
       TextEditingController();
+  final _apiService = ApiService();
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // 处理表单数据
-      print("Email: ${emailController.text}");
-      print("Password: ${passwordController.text}");
-      print("PasswordConfirm: ${passwordConfirmController.text}");
+      // 验证密码确认
+      if (passwordController.text != passwordConfirmController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Passwords do not match'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      try {
+        final response = await _apiService.register(
+          email: emailController.text,
+          password: passwordController.text,
+        );
+        print('response $response');
+
+        // 注册成功
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // 导航到登录页面
+        Navigator.pushNamed(context, AppRoutes.login);
+      } catch (e) {
+        // 显示错误信息
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

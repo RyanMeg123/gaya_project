@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gaya_2/services/auth_service.dart';
 import 'features/home/controllers/cart_controller.dart';
 import 'features/home/home_page.dart';
 import 'features/home/detail/product_secondary.dart';
@@ -24,13 +25,48 @@ class AppRoutes {
   static const String checkout = '/checkout';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    final authService = AuthService();
+    
     switch (settings.name) {
       case splash:
-        return MaterialPageRoute(builder: (context) => const SplashPage());
+        return MaterialPageRoute(
+          builder: (context) => FutureBuilder<bool>(
+            future: authService.isLoggedInValid(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SplashPage();
+              }
+              
+              if (snapshot.data == true) {
+                return const HomePage();
+              }
+              
+              return const SplashPage();
+            },
+          ),
+        );
+
       case login:
-        return MaterialPageRoute(builder: (_) => const LoginPage());
       case registerEmail:
-        return MaterialPageRoute(builder: (_) => const RegisterEmailPage());
+        return MaterialPageRoute(
+          builder: (context) => FutureBuilder<bool>(
+            future: authService.isLoggedInValid(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              if (snapshot.data == true) {
+                return const HomePage();
+              }
+              
+              return settings.name == login 
+                  ? const LoginPage() 
+                  : const RegisterEmailPage();
+            },
+          ),
+        );
+
       case homePage:
         return MaterialPageRoute(builder: (_) => const HomePage());
       case productSecondary:
