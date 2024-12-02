@@ -76,7 +76,12 @@ class ProductItem implements ProductSliding {
 
 class ProductRouteParameter {
   final int cardIndex;
-  ProductRouteParameter({required this.cardIndex});
+  final int initialTabIndex;
+
+  ProductRouteParameter({
+    required this.cardIndex,
+    this.initialTabIndex = 0,
+  });
 }
 
 class TabIconItem {
@@ -264,5 +269,39 @@ class OrderItem {
     total -= (discountAmount);
     total += (shippingFee);
     return total;
+  }
+
+  // 添加 toJson 方法
+  Map<String, dynamic> toJson() {
+    return {
+      'orderNumber': orderNumber,
+      'status': status,
+      'productImage': productImage,
+      'productName': productName,
+      'variant': variant,
+      'price': price,
+      'originalPrice': originalPrice,
+      'itemCount': itemCount,
+      'totalPrice': totalPrice,
+      'discountAmount': discountAmount,
+      'shippingFee': shippingFee,
+    };
+  }
+
+  // 添加 fromJson 工厂构造函数
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    return OrderItem(
+      orderNumber: json['orderNumber'] as String,
+      status: json['status'] as String,
+      productImage: json['productImage'] as String,
+      productName: json['productName'] as String,
+      variant: json['variant'] as String,
+      price: json['price'] as String,
+      originalPrice: json['originalPrice'] as String?,
+      itemCount: json['itemCount'] as int,
+      totalPrice: (json['totalPrice'] as num).toDouble(),
+      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0,
+      shippingFee: (json['shippingFee'] as num?)?.toDouble() ?? 0,
+    );
   }
 }

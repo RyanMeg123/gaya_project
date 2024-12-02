@@ -23,7 +23,7 @@ class HomeTabAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(top: 44.h),
+      padding: EdgeInsets.only(top: 15.h, bottom: 15.h),
       child: Column(
         children: [
           // 顶部栏

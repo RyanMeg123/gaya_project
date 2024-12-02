@@ -9,7 +9,7 @@ class ProductCard extends StatefulWidget {
   final String name;
   final double discountAmount;
   final double originalPrice;
-  final double discountPrice;
+  final double? discountPrice;
   final int collectAmount;
   final VoidCallback? onTap;
 
@@ -21,7 +21,7 @@ class ProductCard extends StatefulWidget {
     required this.name,
     required this.discountAmount,
     required this.originalPrice,
-    required this.discountPrice,
+    this.discountPrice,
     required this.collectAmount,
     this.onTap,
   });
@@ -43,7 +43,7 @@ class _ProductCardState extends State<ProductCard> {
     double imageHeight = cardWidth * (157 / 152); // 假设宽高比为1.5
 
     // 总高度 = 图片高度 + 剩余内容的高度
-    double totalHeight = imageHeight + 160.h; // 假设剩余部分高度为200
+    double totalHeight = imageHeight + 130.h; // 假设剩余部分高度为200
     return SizedBox(
       height: totalHeight,
       width: cardWidth,
@@ -55,15 +55,30 @@ class _ProductCardState extends State<ProductCard> {
             constraints: BoxConstraints(maxHeight: 299.h, maxWidth: 179.w),
             child: Column(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(18.r),
+                Container(
+                  width: widget.isGridView ? double.infinity : 120.w,
+                  height: widget.isGridView ? 120.h : 120.h,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(16.r),
                   ),
-                  child: Image.asset(
-                    widget.productImg,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: imageHeight, // 图片的动态高度
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: widget.productImg.startsWith('http')
+                        ? Image.network(
+                            widget.productImg,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/home/product1.png',
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            widget.productImg,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
                 SizedBox(height: 16.h),
@@ -93,41 +108,47 @@ class _ProductCardState extends State<ProductCard> {
                           Row(
                             children: [
                               Text(
-                                '\$${widget.discountPrice.toString()}',
+                                '\$${(widget.discountPrice ?? widget.originalPrice).toStringAsFixed(2)}',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 16.sp),
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                  fontSize: 16.sp,
+                                ),
                               ),
-                              SizedBox(
-                                width: 2.w,
-                              ),
-                              Text(
-                                '\$${widget.originalPrice.toString()}',
-                                style: TextStyle(
+                              SizedBox(width: 2.w),
+                              if (widget.discountPrice != null &&
+                                  widget.discountAmount > 0)
+                                Text(
+                                  '\$${widget.originalPrice}',
+                                  style: TextStyle(
                                     decoration: TextDecoration.lineThrough,
                                     color:
                                         const Color.fromRGBO(119, 119, 119, 1),
-                                    fontSize: 12.sp),
-                              )
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
                             ],
                           ),
-                          Container(
-                            width: 35.w,
-                            height: 21.h,
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(233, 55, 55, 1),
-                              borderRadius: BorderRadius.circular(3.w),
-                            ),
-                            child: Center(
-                              child: Text(
+                          if (widget.discountAmount > 0)
+                            Container(
+                              width: 35.w,
+                              height: 21.h,
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(233, 55, 55, 1),
+                                borderRadius: BorderRadius.circular(3.w),
+                              ),
+                              child: Center(
+                                child: Text(
                                   '${widget.discountAmount.toStringAsFixed(0)}%',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 12.sp,
-                                  )),
-                            ),
-                          )
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            const SizedBox.shrink(), // 没有折扣时占位
                         ],
                       ),
                       SizedBox(height: 12.h),

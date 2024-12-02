@@ -91,15 +91,14 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: _showLoginStatusDialog,
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.account_circle),
+      //       onPressed: _showLoginStatusDialog,
+      //     ),
+      //   ],
+      // ),
       body: Consumer<HomeController>(builder: (context, controller, child) {
         return _getTabPage(controller.currentTabIndex);
       }),

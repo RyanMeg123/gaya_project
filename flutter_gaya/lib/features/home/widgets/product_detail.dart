@@ -44,8 +44,16 @@ class _ProductDetailWidgetState extends State<ProductDetailWidget>
   final GlobalKey _productKey = GlobalKey();
 
   List<String> get _productImages {
-    return List.filled(
-        3, widget.product.imageUrl ?? 'assets/images/home/product1.png');
+    final imageUrl = widget.product.imageUrl;
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return List.filled(3, 'assets/images/home/product1.png');
+    }
+    // 如果是网络图片，返回相同的URL
+    if (imageUrl.startsWith('http')) {
+      return List.filled(3, imageUrl);
+    }
+    // 如果是本地图片，使用本地路径
+    return List.filled(3, imageUrl);
   }
 
   void _handleDragStart(DragStartDetails details) {
@@ -169,12 +177,24 @@ class _ProductDetailWidgetState extends State<ProductDetailWidget>
                     width: 130.w,
                     height: 130.h,
                     decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(widget.product.imageUrl ?? ''),
-                        fit: BoxFit.cover,
-                      ),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
+                    child: widget.product.imageUrl?.startsWith('http') ?? false
+                        ? Image.network(
+                            widget.product.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/home/product1.png',
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            widget.product.imageUrl ??
+                                'assets/images/home/product1.png',
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
               ),
@@ -192,10 +212,10 @@ class _ProductDetailWidgetState extends State<ProductDetailWidget>
       // 确保在动画完成后移除悬浮图片
       overlayEntry.remove();
       _cartAnimationController.reset();
-      
+
       // 添加到购物车
       widget.cartController.addToCart(widget.product, selectedSize);
-      
+
       // 显示提示
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -261,7 +281,7 @@ class _ProductDetailWidgetState extends State<ProductDetailWidget>
       ),
       bottomNavigationBar: ProductBottomBar(
         onAddToCartPressed: () {
-          _playAddToCartAnimation();  // 只调用动画方法，其他逻辑移到动画完成后
+          _playAddToCartAnimation(); // 只调用动画方法，其他逻辑移到动画完成后
         },
       ),
     );
