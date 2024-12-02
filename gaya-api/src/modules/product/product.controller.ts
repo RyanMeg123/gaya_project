@@ -16,7 +16,7 @@ export class ProductController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all products' })
+  @ApiOperation({ summary: 'Get all products this is a git test' })
   @ApiQuery({ name: 'isDiscounted', required: false, type: Boolean })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
