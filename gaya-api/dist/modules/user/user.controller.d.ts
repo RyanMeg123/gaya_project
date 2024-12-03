@@ -13,12 +13,25 @@ export declare class UserController {
     }>;
     getProfile(email: string): Promise<{
         id: number;
+        name: string;
         email: string;
+        phone: string;
+        address: string;
+        avatar: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
     }>;
     updateProfile(id: number, updateUserDto: UpdateUserDto): Promise<import("./entities/user.entity").User>;
     changePassword(req: any, changePasswordDto: ChangePasswordDto): Promise<{
         message: string;
+    }>;
+    getUserProfile(id: string): Promise<{
+        id: number;
+        name: string;
+        email: string;
+        phone: string;
+        address: string;
+        avatar: string;
     }>;
 }

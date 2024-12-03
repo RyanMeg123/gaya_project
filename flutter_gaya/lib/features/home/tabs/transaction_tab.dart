@@ -9,6 +9,7 @@ import 'package:flutter/scheduler.dart';
 import '../../../services/api_service.dart';
 import '../../../providers/user_provider.dart';
 import '../../../providers/transaction_provider.dart';
+import '../../../models/transaction_item.dart';
 
 class TransactionTab extends StatefulWidget {
   const TransactionTab({super.key});
@@ -19,30 +20,27 @@ class TransactionTab extends StatefulWidget {
 
 class _TransactionTabState extends State<TransactionTab> {
   final TextEditingController _searchController = TextEditingController();
-  List<TransactionItem> _allTransactions = [];
-  List<TransactionItem> _filteredTransactions = [];
-  bool _isLoading = false;
-  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_filterTransactions);
+    _searchController.addListener(_onSearchChanged);
+    // 使用 addPostFrameCallback 来确保在 build 完成后加载数据
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTransactions();
+    });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInitialized) {
-      _loadTransactions();
-      _isInitialized = true;
-    }
+  void _onSearchChanged() {
+    if (!mounted) return;
+    final query = _searchController.text.toLowerCase();
+    Provider.of<TransactionProvider>(context, listen: false)
+        .filterTransactions(query);
   }
 
   Future<void> _loadTransactions() async {
     if (!mounted) return;
-    
-    setState(() => _isLoading = true);
+
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final transactionProvider =
@@ -53,65 +51,19 @@ class _TransactionTabState extends State<TransactionTab> {
       }
 
       await transactionProvider.loadUserTransactions(userProvider.userId!);
-      
-      if (!mounted) return;
-      
-      setState(() {
-        _allTransactions = transactionProvider.transactions
-            .map((t) => TransactionItem(
-                  title: t['type'] ?? 'Shopping',
-                  date: DateFormat('dd MMM yyyy, h:mma')
-                      .format(DateTime.parse(t['createdAt'])),
-                  amount:
-                      '-\$${double.parse(t['amount'].toString()).toStringAsFixed(2)}',
-                  iconBgColor: _getIconBgColor(t['type']),
-                  icon: _getIconData(t['type']),
-                ))
-            .toList();
-
-        _filteredTransactions = _allTransactions;
-      });
     } catch (e) {
       print('Error loading transactions: $e');
       if (mounted) {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(e.toString() == 'User not logged in'
-                  ? 'Please login to view transactions'
-                  : 'Failed to load transactions'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString() == 'User not logged in'
+                ? 'Please login to view transactions'
+                : 'Failed to load transactions'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
-  }
-
-  void _filterTransactions() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredTransactions = _allTransactions.where((transaction) {
-        return transaction.title.toLowerCase().contains(query) ||
-            transaction.date.toLowerCase().contains(query) ||
-            transaction.amount.toLowerCase().contains(query);
-      }).toList();
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _handleBack(BuildContext context) {
-    // 直接返回到上一页，让 HomePage 自己处理状态
-    Navigator.pop(context);
   }
 
   @override
@@ -199,7 +151,7 @@ class _TransactionTabState extends State<TransactionTab> {
                       height: 53.h,
                       margin: EdgeInsets.only(top: 20.h),
                       decoration: ShapeDecoration(
-                        color: const Color(0xFF05199E),
+                        color: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16.r),
                         ),
@@ -245,7 +197,7 @@ class _TransactionTabState extends State<TransactionTab> {
                     Expanded(
                       child: transactionProvider.isLoading
                           ? const Center(child: CircularProgressIndicator())
-                          : _filteredTransactions.isEmpty
+                          : transactionProvider.filteredTransactions.isEmpty
                               ? Center(
                                   child: Text(
                                     'No transactions found',
@@ -258,10 +210,11 @@ class _TransactionTabState extends State<TransactionTab> {
                               : ListView.builder(
                                   padding:
                                       EdgeInsets.symmetric(horizontal: 30.w),
-                                  itemCount: _filteredTransactions.length,
+                                  itemCount: transactionProvider
+                                      .filteredTransactions.length,
                                   itemBuilder: (context, index) {
-                                    final transaction =
-                                        _filteredTransactions[index];
+                                    final transaction = transactionProvider
+                                        .filteredTransactions[index];
                                     return _buildTransactionItem(
                                       transaction.title,
                                       transaction.date,
@@ -280,6 +233,17 @@ class _TransactionTabState extends State<TransactionTab> {
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleBack(BuildContext context) {
+    // 直接返回到上一页，让 HomePage 自己处理状态
+    Navigator.pop(context);
   }
 
   Widget _buildTransactionItem(
@@ -379,21 +343,4 @@ class _TransactionTabState extends State<TransactionTab> {
         return MdiIcons.helpCircleOutline;
     }
   }
-}
-
-// 添加交易项数据模型
-class TransactionItem {
-  final String title;
-  final String date;
-  final String amount;
-  final Color iconBgColor;
-  final IconData icon;
-
-  TransactionItem({
-    required this.title,
-    required this.date,
-    required this.amount,
-    required this.iconBgColor,
-    required this.icon,
-  });
 }

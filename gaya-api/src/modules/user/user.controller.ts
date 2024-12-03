@@ -93,4 +93,25 @@ export class UserController {
     );
     return { message: 'Password changed successfully' };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile/:id')
+  @ApiOperation({ summary: 'Get user profile by ID' })
+  @ApiResponse({ status: 200, description: 'Profile found' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserProfile(@Param('id') id: string) {
+    const user = await this.userService.findOne(parseInt(id));
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    
+    return {
+      id: user.id,
+      name: user.name || 'User Name',
+      email: user.email,
+      phone: user.phone || '+234 9011039271',
+      address: user.address || 'No address provided',
+      avatar: user.avatar,
+    };
+  }
 } 

@@ -5,8 +5,14 @@ import 'package:dio/dio.dart';
 class AuthService {
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
-  static const String _userEmailKey = 'user_email';
+  static const String _emailKey = 'user_email';
   final Dio _dio = Dio();
+
+  // 获取 token
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
+  }
 
   // 检查 token 是否过期
   Future<bool> isTokenValid() async {
@@ -18,8 +24,6 @@ class AuthService {
     try {
       // 使用 jwt_decode 包解析 token
       final Map<String, dynamic> decodedToken = Jwt.parseJwt(token);
-
-      // 检查过期时间
       final exp = decodedToken['exp'];
       if (exp == null) return false;
 
@@ -40,13 +44,13 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_refreshTokenKey, refreshToken);
-    await prefs.setString(_userEmailKey, email);
+    await prefs.setString(_emailKey, email);
   }
 
   // 获取用户邮箱
   Future<String?> getUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userEmailKey);
+    return prefs.getString(_emailKey);
   }
 
   // 自动刷新 token
@@ -93,6 +97,6 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_refreshTokenKey);
-    await prefs.remove(_userEmailKey);
+    await prefs.remove(_emailKey);
   }
 }

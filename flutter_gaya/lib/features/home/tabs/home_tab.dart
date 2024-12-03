@@ -16,13 +16,17 @@ class HomeTab extends StatefulWidget {
   _HomeTabstate createState() => _HomeTabstate();
 }
 
-class _HomeTabstate extends State<HomeTab> {
+class _HomeTabstate extends State<HomeTab> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final _apiService = ApiService();
   List<String> _imgList = [];
   bool _isLoading = true;
   String _searchQuery = '';
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
+  bool _mounted = true;
 
   @override
   void initState() {
@@ -30,19 +34,25 @@ class _HomeTabstate extends State<HomeTab> {
     _loadDiscountedProducts();
   }
 
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
+
   Future<void> _loadDiscountedProducts() async {
+    if (!mounted) return;
     try {
       final products = await _apiService.getDiscountedProducts();
+      if (!_mounted) return;
       setState(() {
-        _imgList =
-            products.map((product) => product['imageUrl'] as String).toList();
+        _imgList = products.map((product) => product['imageUrl'] as String).toList();
         _isLoading = false;
       });
-      print('_imgList ${_imgList.length}');
     } catch (e) {
       print('Error loading discounted products: $e');
+      if (!_mounted) return;
       setState(() {
-        // 使用默认图片作为后备
         _imgList = [
           'assets/images/home/banner1.png',
           'assets/images/home/banner1.png',
@@ -145,6 +155,7 @@ class _HomeTabstate extends State<HomeTab> {
   }
 
   Future<void> _performSearch(String query) async {
+    if (!mounted) return;
     if (query.isEmpty) {
       setState(() {
         _searchResults = [];
@@ -159,12 +170,14 @@ class _HomeTabstate extends State<HomeTab> {
 
     try {
       final results = await _apiService.searchProducts(query);
+      if (!_mounted) return;
       setState(() {
         _searchResults = results;
         _isSearching = false;
       });
     } catch (e) {
       print('Search error: $e');
+      if (!_mounted) return;
       setState(() {
         _searchResults = [];
         _isSearching = false;
@@ -211,6 +224,7 @@ class _HomeTabstate extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: GestureDetector(
         onTap: () {

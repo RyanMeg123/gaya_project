@@ -9,6 +9,7 @@ import 'features/home/controllers/cart_controller.dart';
 import 'features/home/controllers/wishlist_controller.dart';
 import 'controllers/home_controller.dart';
 import 'providers/transaction_provider.dart';
+import 'providers/profile_provider.dart';
 
 // Routes
 import 'routes.dart';
@@ -18,7 +19,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   runApp(
     MultiProvider(
       providers: [
@@ -38,6 +39,9 @@ void main() async {
           create: (_) => HomeController(),
         ),
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider<ProfileProvider>(
+          create: (_) => ProfileProvider(),
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),
@@ -45,7 +49,7 @@ void main() async {
         splitScreenMode: true,
         builder: (context, child) {
           return MaterialApp(
-            navigatorKey: navigatorKey,  // 添加 navigator key
+            navigatorKey: navigatorKey, // 添加 navigator key
             title: 'Gaya App',
             theme: ThemeData(
               primarySwatch: Colors.blue,
@@ -82,6 +86,9 @@ class MyGayaApp extends StatelessWidget {
         ChangeNotifierProvider<HomeController>(
           create: (_) => HomeController(),
         ),
+        ChangeNotifierProvider<ProfileProvider>(
+          create: (_) => ProfileProvider(),
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),
@@ -89,7 +96,7 @@ class MyGayaApp extends StatelessWidget {
         splitScreenMode: true,
         builder: (context, child) {
           return MaterialApp(
-            navigatorKey: navigatorKey,  // 添加 navigator key
+            navigatorKey: navigatorKey, // 添加 navigator key
             title: 'Gaya App',
             theme: ThemeData(
               primarySwatch: Colors.blue,

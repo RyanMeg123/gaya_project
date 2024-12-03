@@ -1,20 +1,52 @@
 import 'package:dio/dio.dart';
+import 'auth_service.dart';
 
 class ApiService {
   final Dio _dio = Dio();
   final String baseUrl = 'http://localhost:3000'; // 开发环境使用localhost
+  final AuthService _authService = AuthService();
 
   ApiService() {
     _dio.options.baseUrl = baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 5);
     _dio.options.receiveTimeout = const Duration(seconds: 3);
 
-    // 添加日志拦截器
+    // 添加拦截器
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          // 获取 token
+          final token = await _authService.getToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (DioException error, handler) async {
+          if (error.response?.statusCode == 401) {
+            try {
+              // 尝试刷新 token
+              await _authService.refreshTokenIfNeeded();
+              // 重试请求
+              final token = await _authService.getToken();
+              error.requestOptions.headers['Authorization'] = 'Bearer $token';
+              final response = await _dio.fetch(error.requestOptions);
+              return handler.resolve(response);
+            } catch (e) {
+              return handler.reject(error);
+            }
+          }
+          return handler.next(error);
+        },
+      ),
+    );
+
+    // 日志拦截器
     _dio.interceptors.add(LogInterceptor(
       requestBody: true,
       responseBody: true,
       logPrint: (obj) {
-        print('\x1B[32m${obj.toString()}\x1B[0m');  // 绿色输出
+        print('\x1B[32m${obj.toString()}\x1B[0m');
       }
     ));
   }
@@ -187,7 +219,7 @@ class ApiService {
     }
   }
 
-  // 获取用户详细信息
+  // 获取用户详细信息（通过 email）
   Future<Map<String, dynamic>> getUserProfile(String email) async {
     try {
       final response = await _dio.get('/users/profile', queryParameters: {
@@ -207,9 +239,29 @@ class ApiService {
     }
   }
 
+  // 获取用户详细信息（通过 userId）
+  Future<Map<String, dynamic>> getUserProfileById(String userId) async {
+    try {
+      final response = await _dio.get('/users/profile/$userId');
+
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+      throw Exception('Failed to get user profile');
+    } catch (e) {
+      print('Error getting user profile: $e');
+      if (e is DioException) {
+        print('Response data: ${e.response?.data}');
+        print('Request path: ${e.requestOptions.path}');
+        throw Exception(e.response?.data['message'] ?? 'Failed to get user profile');
+      }
+      throw Exception('Network error');
+    }
+  }
+
   // 更新用户资料
   Future<Map<String, dynamic>> updateUserProfile(
-    int userId, 
+    String userId, 
     Map<String, dynamic> data,
   ) async {
     try {

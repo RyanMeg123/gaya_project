@@ -55,6 +55,20 @@ let UserController = class UserController {
         await this.userService.changePassword(req.user.id, changePasswordDto.oldPassword, changePasswordDto.newPassword);
         return { message: 'Password changed successfully' };
     }
+    async getUserProfile(id) {
+        const user = await this.userService.findOne(parseInt(id));
+        if (!user) {
+            throw new common_1.NotFoundException(`User with ID ${id} not found`);
+        }
+        return {
+            id: user.id,
+            name: user.name || 'User Name',
+            email: user.email,
+            phone: user.phone || '+234 9011039271',
+            address: user.address || 'No address provided',
+            avatar: user.avatar,
+        };
+    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -107,6 +121,17 @@ __decorate([
     __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('profile/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get user profile by ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Profile found' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getUserProfile", null);
 exports.UserController = UserController = __decorate([
     (0, swagger_1.ApiTags)('users'),
     (0, common_1.Controller)('users'),

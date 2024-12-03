@@ -90,4 +90,17 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.userRepository.update(id, { password: hashedPassword });
   }
+
+  async findOne(id: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'name', 'email', 'phone', 'address', 'avatar'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user;
+  }
 } 

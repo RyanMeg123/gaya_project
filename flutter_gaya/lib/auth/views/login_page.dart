@@ -30,27 +30,34 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       try {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
+        
+        // 登录并获取响应
         final response = await _apiService.login(
           email: emailController.text,
           password: passwordController.text,
         );
 
+        // 设置用户数据
         await userProvider.setUserData(response);
+        
+        // 确保用户数据已初始化
+        await userProvider.initializeUser();
 
         if (mounted) {
+          // 使用 pushNamedAndRemoveUntil 清除导航栈
+          await Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.homePage,
+            (route) => false,
+          );
+
+          // 成功提示放在导航之后，避免被新页面覆盖
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Login successful'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 2),
             ),
-          );
-
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.homePage,
-            (route) => false,
-            arguments: true,
           );
         }
       } catch (e) {

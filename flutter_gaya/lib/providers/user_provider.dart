@@ -53,7 +53,12 @@ class UserProvider with ChangeNotifier {
 
   // 设置用户数据
   Future<void> setUserData(Map<String, dynamic> userData) async {
-    _userData = userData;
+    _userData = {
+      'id': userData['user']['id'],
+      'email': userData['user']['email'],
+      'accessToken': userData['accessToken'],
+      'refreshToken': userData['refreshToken'],
+    };
 
     // 保存到本地存储
     await _authService.saveLoginState(

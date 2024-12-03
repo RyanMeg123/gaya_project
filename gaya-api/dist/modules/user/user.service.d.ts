@@ -10,4 +10,5 @@ export declare class UserService {
     findById(id: number): Promise<User | undefined>;
     updateProfile(id: number, updateUserDto: UpdateUserDto): Promise<User>;
     changePassword(id: number, oldPassword: string, newPassword: string): Promise<void>;
+    findOne(id: number): Promise<User>;
 }
