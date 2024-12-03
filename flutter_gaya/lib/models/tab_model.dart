@@ -283,25 +283,21 @@ class OrderItem {
       'originalPrice': originalPrice,
       'itemCount': itemCount,
       'totalPrice': totalPrice,
-      'discountAmount': discountAmount,
-      'shippingFee': shippingFee,
     };
   }
 
   // 添加 fromJson 工厂构造函数
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
-      orderNumber: json['orderNumber'] as String,
-      status: json['status'] as String,
-      productImage: json['productImage'] as String,
-      productName: json['productName'] as String,
-      variant: json['variant'] as String,
-      price: json['price'] as String,
-      originalPrice: json['originalPrice'] as String?,
-      itemCount: json['itemCount'] as int,
-      totalPrice: (json['totalPrice'] as num).toDouble(),
-      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0,
-      shippingFee: (json['shippingFee'] as num?)?.toDouble() ?? 0,
+      orderNumber: json['orderNumber'],
+      status: json['status'],
+      productImage: json['productImage'],
+      productName: json['productName'],
+      variant: json['variant'],
+      price: json['price'],
+      originalPrice: json['originalPrice'],
+      itemCount: json['itemCount'],
+      totalPrice: json['totalPrice'],
     );
   }
 }

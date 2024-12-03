@@ -18,4 +18,9 @@ export class AuthController {
     console.log('Login result:', result);
     return result;
   }
+
+  @Post('refresh')
+  async refreshToken(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshToken(body.refreshToken);
+  }
 } 

@@ -3,17 +3,20 @@ import {
   Post, 
   Body, 
   Get, 
-  Put, 
+  Patch, 
   Param, 
+  Query,
   UseGuards,
   Request,
-  UnauthorizedException
+  UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('users')
@@ -53,28 +56,32 @@ export class UserController {
   }
 
   @Get('profile')
-  @ApiOperation({ summary: 'Get user profile' })
-  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@Request() req) {
-    return this.userService.findById(req.user.id);
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Query('email') email: string) {
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    // 移除敏感信息
+    const { password, ...result } = user;
+    return result;
   }
 
-  @Put('profile')
-  @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async updateProfile(
-    @Request() req,
-    @Body() updateProfileDto: UpdateProfileDto
+    @Param('id') id: number,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.userService.updateProfile(req.user.id, updateProfileDto);
+    return this.userService.updateProfile(id, updateUserDto);
   }
 
-  @Put('change-password')
+  @Patch('change-password')
   @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid old password' })
+  @UseGuards(JwtAuthGuard)
   async changePassword(
     @Request() req,
     @Body() changePasswordDto: ChangePasswordDto

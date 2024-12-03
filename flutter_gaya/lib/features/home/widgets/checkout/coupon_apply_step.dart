@@ -97,6 +97,7 @@ class _CouponApplyStepState extends State<CouponApplyStep> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(height: 30.h),
           // 优惠券输入框
           Container(
             height: 60.h,

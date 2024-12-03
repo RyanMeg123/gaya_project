@@ -22,21 +22,17 @@ let AuthService = class AuthService {
     async login(loginDto) {
         try {
             const { email, password } = loginDto;
-            console.log('Attempting to find user:', email);
             const user = await this.userService.findByEmail(email);
-            console.log('Found user:', user ? 'yes' : 'no');
             if (!user) {
                 throw new common_1.UnauthorizedException('Invalid credentials');
             }
             const isPasswordValid = await bcrypt.compare(password, user.password);
-            console.log('Password valid:', isPasswordValid);
             if (!isPasswordValid) {
                 throw new common_1.UnauthorizedException('Invalid credentials');
             }
-            const payload = { email: user.email, sub: user.id };
-            const access_token = this.jwtService.sign(payload);
+            const tokens = await this.generateTokens(user);
             return {
-                access_token,
+                ...tokens,
                 user: {
                     id: user.id,
                     email: user.email,
@@ -46,6 +42,32 @@ let AuthService = class AuthService {
         catch (error) {
             console.error('Login error:', error);
             throw error;
+        }
+    }
+    async generateTokens(user) {
+        const payload = { email: user.email, sub: user.id };
+        const accessToken = this.jwtService.sign(payload, {
+            expiresIn: '24h',
+        });
+        const refreshToken = this.jwtService.sign(payload, {
+            expiresIn: '30d',
+        });
+        return {
+            accessToken,
+            refreshToken,
+        };
+    }
+    async refreshToken(refreshToken) {
+        try {
+            const payload = this.jwtService.verify(refreshToken);
+            const user = await this.userService.findByEmail(payload.email);
+            if (!user) {
+                throw new common_1.UnauthorizedException();
+            }
+            return this.generateTokens(user);
+        }
+        catch {
+            throw new common_1.UnauthorizedException();
         }
     }
 };

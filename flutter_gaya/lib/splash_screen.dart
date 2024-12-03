@@ -21,9 +21,9 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginState() async {
     // 添加一个短暂延迟以显示启动画面
     await Future.delayed(const Duration(seconds: 2));
-    
-    final isLoggedIn = await _authService.isLoggedInValid();
-    
+
+    final isLoggedIn = await _authService.isTokenValid();
+
     if (mounted) {
       if (isLoggedIn) {
         // 如果已登录，直接进入主页

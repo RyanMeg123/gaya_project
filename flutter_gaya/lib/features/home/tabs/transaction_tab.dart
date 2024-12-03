@@ -1,10 +1,14 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gaya_2/routes.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import '../../../controllers/home_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/scheduler.dart';
+
+// Services & Providers
+import '../../../services/api_service.dart';
+import '../../../providers/user_provider.dart';
+import '../../../providers/transaction_provider.dart';
 
 class TransactionTab extends StatefulWidget {
   const TransactionTab({super.key});
@@ -15,57 +19,77 @@ class TransactionTab extends StatefulWidget {
 
 class _TransactionTabState extends State<TransactionTab> {
   final TextEditingController _searchController = TextEditingController();
-  final List<TransactionItem> _allTransactions = [
-    TransactionItem(
-      title: 'Shopping',
-      date: '15 Mar 2019, 8:20PM',
-      amount: '-\$120',
-      iconBgColor: const Color(0xFFFFCF81),
-      icon: MdiIcons.cartOutline,
-    ),
-    TransactionItem(
-      title: 'Medicine',
-      date: '13 Mar 2019, 12:10AM',
-      amount: '-\$89.50',
-      iconBgColor: const Color(0xFFE09FFF),
-      icon: MdiIcons.pill,
-    ),
-    TransactionItem(
-      title: 'Sport',
-      date: '10 Mar 2019, 6:50PM',
-      amount: '-\$20.50',
-      iconBgColor: const Color(0xEA00DADE),
-      icon: MdiIcons.basketball,
-    ),
-    TransactionItem(
-      title: 'Travel',
-      date: '3 Mar 2019, 5:50PM',
-      amount: '-\$399',
-      iconBgColor: const Color(0xEAFF8787),
-      icon: MdiIcons.airplane,
-    ),
-    TransactionItem(
-      title: 'Shopping',
-      date: '5 Mar 2019, 7:20PM',
-      amount: '-\$255',
-      iconBgColor: const Color(0xFFFFCF81),
-      icon: MdiIcons.cartOutline,
-    ),
-    TransactionItem(
-      title: 'Sport',
-      date: '25 mar 2019, 6:32PM',
-      amount: '-\$20.50',
-      iconBgColor: const Color(0xEA00DADE),
-      icon: MdiIcons.basketball,
-    ),
-  ];
+  List<TransactionItem> _allTransactions = [];
   List<TransactionItem> _filteredTransactions = [];
+  bool _isLoading = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _filteredTransactions = _allTransactions;
     _searchController.addListener(_filterTransactions);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _loadTransactions();
+      _isInitialized = true;
+    }
+  }
+
+  Future<void> _loadTransactions() async {
+    if (!mounted) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final transactionProvider =
+          Provider.of<TransactionProvider>(context, listen: false);
+
+      if (userProvider.userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      await transactionProvider.loadUserTransactions(userProvider.userId!);
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _allTransactions = transactionProvider.transactions
+            .map((t) => TransactionItem(
+                  title: t['type'] ?? 'Shopping',
+                  date: DateFormat('dd MMM yyyy, h:mma')
+                      .format(DateTime.parse(t['createdAt'])),
+                  amount:
+                      '-\$${double.parse(t['amount'].toString()).toStringAsFixed(2)}',
+                  iconBgColor: _getIconBgColor(t['type']),
+                  icon: _getIconData(t['type']),
+                ))
+            .toList();
+
+        _filteredTransactions = _allTransactions;
+      });
+    } catch (e) {
+      print('Error loading transactions: $e');
+      if (mounted) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString() == 'User not logged in'
+                  ? 'Please login to view transactions'
+                  : 'Failed to load transactions'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _filterTransactions() {
@@ -92,170 +116,169 @@ class _TransactionTabState extends State<TransactionTab> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _handleBack(context);
-        return false;
-      },
-      child: Column(
-        children: [
-          // 顶部蓝色背景
-          Container(
-            width: 375.w,
-            height: 245.h,
-            decoration: ShapeDecoration(
-              color: const Color(0xFF3C43FF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(62.r),
-                  bottomRight: Radius.circular(62.r),
-                ),
-              ),
-            ),
-            child: Column(
-              children: [
-                // 标题和返回按钮
-                Padding(
-                  padding: EdgeInsets.only(top: 64.h, left: 0.w, right: 0.w),
-                  child: Row(
-                    children: [
-                      // IconButton(
-                      //   icon: const Icon(CupertinoIcons.back,
-                      //       color: Colors.white),
-                      //   onPressed: () => _handleBack(context),
-                      // ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            'Transactions',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 17.5.sp,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 总支出金额
-                Column(
-                  children: [
-                    Text(
-                      'Your total expences',
-                      style: TextStyle(
-                        color: const Color(0xFF87F0FF),
-                        fontSize: 22.5.sp,
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    SizedBox(height: 15.h),
-                    Text(
-                      '\$1063.30',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24.sp,
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 26),
-
-          // 交易列表区域（包含搜索栏）
-          Expanded(
-            child: Container(
+    return Consumer<TransactionProvider>(
+      builder: (context, transactionProvider, _) {
+        return Column(
+          children: [
+            // 顶部蓝色背景
+            Container(
+              width: 375.w,
+              height: 245.h,
               decoration: ShapeDecoration(
-                color: const Color(0xF73C43FF),
+                color: const Color(0xFF3C43FF),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(62.r),
-                    topRight: Radius.circular(62.r),
+                    bottomLeft: Radius.circular(62.r),
+                    bottomRight: Radius.circular(62.r),
                   ),
                 ),
               ),
               child: Column(
                 children: [
-                  // 搜索栏（固定在顶部）
-                  Container(
-                    width: 315.w,
-                    height: 53.h,
-                    margin: EdgeInsets.only(top: 20.h),
-                    decoration: ShapeDecoration(
-                      color: const Color(0xFF05199E),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.r),
+                  // 标题
+                  Padding(
+                    padding: EdgeInsets.only(top: 64.h),
+                    child: Text(
+                      'Transactions',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17.5.sp,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        SizedBox(width: 37.w),
-                        Icon(
-                          MdiIcons.magnify,
-                          color: const Color(0xFF3D56FA),
-                          size: 22.sp,
+                  ),
+
+                  // 总支出金额
+                  Column(
+                    children: [
+                      Text(
+                        'Your total expenses',
+                        style: TextStyle(
+                          color: const Color(0xFF87F0FF),
+                          fontSize: 22.5.sp,
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w400,
                         ),
-                        SizedBox(width: 7.w),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            style: TextStyle(
-                              color: const Color(0xFF3D56FA),
-                              fontSize: 20.sp,
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w500,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              hintStyle: TextStyle(
+                      ),
+                      SizedBox(height: 15.h),
+                      Text(
+                        '\$${transactionProvider.totalExpenses.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24.sp,
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: 26.h),
+
+            // 交易列表区域
+            Expanded(
+              child: Container(
+                decoration: ShapeDecoration(
+                  color: const Color(0xF73C43FF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(62.r),
+                      topRight: Radius.circular(62.r),
+                    ),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // 搜索栏
+                    Container(
+                      width: 315.w,
+                      height: 53.h,
+                      margin: EdgeInsets.only(top: 20.h),
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFF05199E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(width: 37.w),
+                          Icon(
+                            MdiIcons.magnify,
+                            color: const Color(0xFF3D56FA),
+                            size: 22.sp,
+                          ),
+                          SizedBox(width: 7.w),
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              style: TextStyle(
                                 color: const Color(0xFF3D56FA),
                                 fontSize: 20.sp,
                                 fontFamily: 'Montserrat',
                                 fontWeight: FontWeight.w500,
                               ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
+                              decoration: InputDecoration(
+                                hintText: 'Search',
+                                hintStyle: TextStyle(
+                                  color: const Color(0xFF3D56FA),
+                                  fontSize: 20.sp,
+                                  fontFamily: 'Montserrat',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
-                  SizedBox(height: 20.h),
+                    SizedBox(height: 20.h),
 
-                  // 交易列表（可滚动）
-                  Expanded(
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: 30.w),
-                      itemCount: _filteredTransactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = _filteredTransactions[index];
-                        return _buildTransactionItem(
-                          transaction.title,
-                          transaction.date,
-                          transaction.amount,
-                          transaction.iconBgColor,
-                          transaction.icon,
-                        );
-                      },
+                    // 交易列表
+                    Expanded(
+                      child: transactionProvider.isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : _filteredTransactions.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    'No transactions found',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16.sp,
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 30.w),
+                                  itemCount: _filteredTransactions.length,
+                                  itemBuilder: (context, index) {
+                                    final transaction =
+                                        _filteredTransactions[index];
+                                    return _buildTransactionItem(
+                                      transaction.title,
+                                      transaction.date,
+                                      transaction.amount,
+                                      transaction.iconBgColor,
+                                      transaction.icon,
+                                    );
+                                  },
+                                ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 
@@ -325,6 +348,36 @@ class _TransactionTabState extends State<TransactionTab> {
         ],
       ),
     );
+  }
+
+  Color _getIconBgColor(String type) {
+    switch (type) {
+      case 'Shopping':
+        return const Color(0xFFFFCF81);
+      case 'Medicine':
+        return const Color(0xFFE09FFF);
+      case 'Sport':
+        return const Color(0xEA00DADE);
+      case 'Travel':
+        return const Color(0xEAFF8787);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getIconData(String type) {
+    switch (type) {
+      case 'Shopping':
+        return MdiIcons.cartOutline;
+      case 'Medicine':
+        return MdiIcons.pill;
+      case 'Sport':
+        return MdiIcons.basketball;
+      case 'Travel':
+        return MdiIcons.airplane;
+      default:
+        return MdiIcons.helpCircleOutline;
+    }
   }
 }
 

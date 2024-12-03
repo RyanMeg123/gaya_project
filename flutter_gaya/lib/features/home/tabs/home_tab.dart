@@ -121,14 +121,14 @@ class _HomeTabstate extends State<HomeTab> {
     // 根据卡片索引设置对应的标签索引
     int initialTabIndex;
     switch (index) {
-      case 0:  // TShirt 卡片
-        initialTabIndex = 0;  // 对应 TShirt 标签
+      case 0: // TShirt 卡片
+        initialTabIndex = 0; // 对应 TShirt 标签
         break;
-      case 1:  // Shoes 卡片
-        initialTabIndex = 1;  // 对应 Shoes 标签
+      case 1: // Shoes 卡片
+        initialTabIndex = 1; // 对应 Shoes 标签
         break;
-      case 2:  // Watch 卡片
-        initialTabIndex = 4;  // 对应 Watch 标签
+      case 2: // Watch 卡片
+        initialTabIndex = 4; // 对应 Watch 标签
         break;
       default:
         initialTabIndex = 0;

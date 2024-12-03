@@ -253,10 +253,38 @@ class _CartTabState extends State<CartTab> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.r),
                       ),
-                      image: DecorationImage(
-                        image: AssetImage(productImage),
-                        fit: BoxFit.cover,
-                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: productImage.startsWith('http')
+                          ? Image.network(
+                              productImage,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/home/product1.png',
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              productImage,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
                   SizedBox(width: 20.w),

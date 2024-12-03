@@ -7,18 +7,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class CartController extends ChangeNotifier {
   List<OrderItem> _cartItems = [];
-  List<CartItem> _items = [];
+
+  // 构造函数中加载本地数据
+  CartController() {
+    _loadFromLocal();
+  }
 
   List<OrderItem> get cartItems => _cartItems;
-  List<CartItem> get items => _items;
 
-  int get itemCount => _items.length;
-  double get totalAmount =>
-      _items.fold(0, (sum, item) => sum + item.totalPrice);
-
-  // 添加到购物车 (新版本)
+  // 添加到购物车
   void addToCart(ProductDetail product, String variant) {
-    // 检查是否已存在相同商品
     final existingItem = _cartItems.firstWhere(
       (item) =>
           item.orderNumber == product.productId.toString() &&
@@ -41,64 +39,75 @@ class CartController extends ChangeNotifier {
 
     if (!_cartItems.contains(existingItem)) {
       _cartItems.add(existingItem);
+      _saveToLocal();  // 保存到本地
     }
-    _saveToLocal();
     notifyListeners();
-  }
-
-  // 更新订单状态
-  void updateOrderStatus(String orderNumber, String newStatus) {
-    final orderIndex =
-        _cartItems.indexWhere((item) => item.orderNumber == orderNumber);
-    if (orderIndex != -1) {
-      _cartItems[orderIndex].status = newStatus;
-      _saveToLocal();
-      notifyListeners();
-    }
   }
 
   // 从购物车移除
   void removeFromCart(String orderNumber) {
     _cartItems.removeWhere((item) => item.orderNumber == orderNumber);
-    _saveToLocal();
+    _saveToLocal();  // 保存到本地
     notifyListeners();
   }
 
-  // 更新数量
+  // 更新订单状态
+  Future<void> updateOrderStatus(String orderNumber, String newStatus) async {
+    try {
+      final orderIndex =
+          _cartItems.indexWhere((item) => item.orderNumber == orderNumber);
+      if (orderIndex != -1) {
+        _cartItems[orderIndex].status = newStatus;
+        _saveToLocal();  // 保存到本地
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error updating order status: $e');
+      rethrow;
+    }
+  }
+
+  // 更新商品数量
   void updateItemCount(String orderNumber, int count) {
-    final item =
-        _cartItems.firstWhere((item) => item.orderNumber == orderNumber);
+    final item = _cartItems.firstWhere((item) => item.orderNumber == orderNumber);
     final price = double.parse(item.price.replaceAll('\$', ''));
     item.itemCount = count;
     item.totalPrice = price * count;
-    _saveToLocal();
+    _saveToLocal();  // 保存到本地
     notifyListeners();
   }
 
   // 清空购物车
   void clearCart() {
     _cartItems.clear();
-    _saveToLocal();
+    _saveToLocal();  // 保存到本地
     notifyListeners();
   }
 
   // 保存到本地存储
   Future<void> _saveToLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String cartJson =
-        jsonEncode(_cartItems.map((e) => e.toJson()).toList());
-    await prefs.setString('cart_items', cartJson);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String cartJson = jsonEncode(_cartItems.map((e) => e.toJson()).toList());
+      await prefs.setString('cart_items', cartJson);
+    } catch (e) {
+      print('Error saving cart: $e');
+    }
   }
 
   // 从本地存储加载
-  Future<void> loadFromLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? cartJson = prefs.getString('cart_items');
-
-    if (cartJson != null) {
-      final List<dynamic> decoded = jsonDecode(cartJson);
-      _cartItems = decoded.map((item) => OrderItem.fromJson(item)).toList();
-      notifyListeners();
+  Future<void> _loadFromLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? cartJson = prefs.getString('cart_items');
+      
+      if (cartJson != null) {
+        final List<dynamic> decoded = jsonDecode(cartJson);
+        _cartItems = decoded.map((item) => OrderItem.fromJson(item)).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error loading cart: $e');
     }
   }
 }

@@ -137,4 +137,97 @@ class ApiService {
       throw Exception('Failed to load products');
     }
   }
+
+  // 创建交易记录
+  Future<void> createTransaction({
+    required String orderNumber,
+    required double amount,
+    required int userId,
+    required String type,
+    String? status,
+  }) async {
+    try {
+      print('API call - createTransaction: $orderNumber, $amount, $userId, $type, $status');
+      final response = await _dio.post('/transactions', data: {
+        'orderNumber': orderNumber,
+        'amount': amount,
+        'userId': userId,
+        'type': type,
+        'status': status ?? 'completed',
+      });
+
+      print('Transaction API response: ${response.statusCode} - ${response.data}');
+
+      if (response.statusCode != 201) {
+        throw Exception('Failed to create transaction: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error creating transaction: $e');
+      if (e is DioException) {
+        print('DioError response: ${e.response?.data}');
+        throw Exception(e.response?.data['message'] ?? 'Failed to create transaction');
+      }
+      rethrow;
+    }
+  }
+
+  // 获取用户的交易记录
+  Future<List<Map<String, dynamic>>> getUserTransactions(int userId) async {
+    try {
+      final response = await _dio.get('/transactions/user/$userId');
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to get transactions');
+      }
+
+      return List<Map<String, dynamic>>.from(response.data);
+    } catch (e) {
+      print('Error getting transactions: $e');
+      rethrow;
+    }
+  }
+
+  // 获取用户详细信息
+  Future<Map<String, dynamic>> getUserProfile(String email) async {
+    try {
+      final response = await _dio.get('/users/profile', queryParameters: {
+        'email': email,
+      });
+
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+      throw Exception('Failed to get user profile');
+    } catch (e) {
+      print('Error getting user profile: $e');
+      if (e is DioException) {
+        throw Exception(e.response?.data['message'] ?? 'Failed to get user profile');
+      }
+      throw Exception('Network error');
+    }
+  }
+
+  // 更新用户资料
+  Future<Map<String, dynamic>> updateUserProfile(
+    int userId, 
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _dio.patch(
+        '/users/$userId',
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+      throw Exception('Failed to update profile');
+    } catch (e) {
+      print('Error updating profile: $e');
+      if (e is DioException) {
+        throw Exception(e.response?.data['message'] ?? 'Failed to update profile');
+      }
+      throw Exception('Network error');
+    }
+  }
 }

@@ -1,7 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findByEmail(email: string): Promise<User | undefined> {
+  async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
 
@@ -55,11 +56,24 @@ export class UserService {
     return user;
   }
 
-  async updateProfile(id: number, updateData: Partial<User>): Promise<User> {
-    delete updateData.password;
-    
-    await this.userRepository.update(id, updateData);
-    return this.findById(id);
+  async updateProfile(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existingUser = await this.findByEmail(updateUserDto.email);
+      if (existingUser) {
+        throw new ConflictException('Email already exists');
+      }
+    }
+
+    Object.assign(user, updateUserDto);
+    await this.userRepository.save(user);
+
+    const { password, ...result } = user;
+    return result as User;
   }
 
   async changePassword(id: number, oldPassword: string, newPassword: string): Promise<void> {

@@ -6,6 +6,7 @@ class UserProvider with ChangeNotifier {
   // 用户数据
   Map<String, dynamic>? _userData;
   bool _isLoading = false;
+  String? _error;
   final AuthService _authService = AuthService();
   final ApiService _apiService = ApiService();
   bool _hasCheckedLoginState = false;
@@ -15,31 +16,34 @@ class UserProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _userData != null;
   String? get userEmail => _userData?['email'];
-  int? get userId => _userData?['id'];
+  int? get userId {
+    return _userData?['id'] as int?;
+  }
+
   String? get token => _userData?['token'];
   bool get hasCheckedLoginState => _hasCheckedLoginState;
 
   // 初始化用户状态
   Future<void> initializeUser() async {
-    if (_hasCheckedLoginState) return;  // 避免重复检查
-    
+    if (_hasCheckedLoginState) return;
+
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      final isValid = await _authService.isLoggedInValid();
+      final isValid = await _authService.isTokenValid();
       if (isValid) {
         final email = await _authService.getUserEmail();
-        final token = await _authService.getToken();
-        if (email != null && token != null) {
-          _userData = {
-            'email': email,
-            'token': token,
-          };
+        if (email != null) {
+          // 从API获取用户详细信息
+          final response = await _apiService.getUserProfile(email);
+          _userData = response;
         }
       }
     } catch (e) {
-      print('Error initializing user: $e');
+      _error = e.toString();
+      _userData = null;
     } finally {
       _isLoading = false;
       _hasCheckedLoginState = true;
@@ -50,13 +54,14 @@ class UserProvider with ChangeNotifier {
   // 设置用户数据
   Future<void> setUserData(Map<String, dynamic> userData) async {
     _userData = userData;
-    
+
     // 保存到本地存储
     await _authService.saveLoginState(
-      token: userData['access_token'],
+      token: userData['accessToken'],
+      refreshToken: userData['refreshToken'],
       email: userData['user']['email'],
     );
-    
+
     notifyListeners();
   }
 
@@ -72,6 +77,9 @@ class UserProvider with ChangeNotifier {
       );
 
       await setUserData(response);
+      
+      // 登录成功后立即初始化用户数据
+      await initializeUser();
     } catch (e) {
       print('Login error: $e');
       rethrow;
@@ -135,7 +143,7 @@ class UserProvider with ChangeNotifier {
     if (_userData == null) {
       return false;
     }
-    return _authService.isLoggedInValid();
+    return _authService.isTokenValid();
   }
 
   // 清除用户数据

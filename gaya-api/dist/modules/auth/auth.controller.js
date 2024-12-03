@@ -27,6 +27,9 @@ let AuthController = class AuthController {
         console.log('Login result:', result);
         return result;
     }
+    async refreshToken(body) {
+        return this.authService.refreshToken(body.refreshToken);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -39,6 +42,13 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('refresh'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "refreshToken", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('auth'),
     (0, common_1.Controller)('auth'),

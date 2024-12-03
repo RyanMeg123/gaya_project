@@ -17,8 +17,9 @@ const common_1 = require("@nestjs/common");
 const user_service_1 = require("./user.service");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const login_user_dto_1 = require("./dto/login-user.dto");
-const update_profile_dto_1 = require("./dto/update-profile.dto");
+const update_user_dto_1 = require("./dto/update-user.dto");
 const change_password_dto_1 = require("./dto/change-password.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const swagger_1 = require("@nestjs/swagger");
 let UserController = class UserController {
     constructor(userService) {
@@ -39,11 +40,16 @@ let UserController = class UserController {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
     }
-    async getProfile(req) {
-        return this.userService.findById(req.user.id);
+    async getProfile(email) {
+        const user = await this.userService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        const { password, ...result } = user;
+        return result;
     }
-    async updateProfile(req, updateProfileDto) {
-        return this.userService.updateProfile(req.user.id, updateProfileDto);
+    async updateProfile(id, updateUserDto) {
+        return this.userService.updateProfile(id, updateUserDto);
     }
     async changePassword(req, changePasswordDto) {
         await this.userService.changePassword(req.user.id, changePasswordDto.oldPassword, changePasswordDto.newPassword);
@@ -74,30 +80,27 @@ __decorate([
 ], UserController.prototype, "login", null);
 __decorate([
     (0, common_1.Get)('profile'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get user profile' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Profile retrieved successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
-    __param(0, (0, common_1.Request)()),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Query)('email')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getProfile", null);
 __decorate([
-    (0, common_1.Put)('profile'),
-    (0, swagger_1.ApiOperation)({ summary: 'Update user profile' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Profile updated successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
-    __param(0, (0, common_1.Request)()),
+    (0, common_1.Patch)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, update_profile_dto_1.UpdateProfileDto]),
+    __metadata("design:paramtypes", [Number, update_user_dto_1.UpdateUserDto]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "updateProfile", null);
 __decorate([
-    (0, common_1.Put)('change-password'),
+    (0, common_1.Patch)('change-password'),
     (0, swagger_1.ApiOperation)({ summary: 'Change user password' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Password changed successfully' }),
     (0, swagger_1.ApiResponse)({ status: 401, description: 'Invalid old password' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

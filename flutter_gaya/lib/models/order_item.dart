@@ -1,46 +1,44 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'order_item.g.dart';
-
 @JsonSerializable()
 class OrderItem {
   final String orderNumber;
-  String status;
-  final String productImage;
   final String productName;
   final String variant;
-  final String price;
-  final String? originalPrice;
-  int itemCount;
-  double totalPrice;
+  final double price;
   double discountAmount;
-  double shippingFee;
+  final String status;
 
   OrderItem({
     required this.orderNumber,
-    required this.status,
-    required this.productImage,
     required this.productName,
     required this.variant,
     required this.price,
-    this.originalPrice,
-    required this.itemCount,
-    required this.totalPrice,
     this.discountAmount = 0,
-    this.shippingFee = 0,
+    this.status = 'pending',
   });
 
-  double get finalPrice {
-    double total = totalPrice;
-    total -= (discountAmount);
-    total += (shippingFee);
-    return total;
+  double get finalPrice => price - discountAmount;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'orderNumber': orderNumber,
+      'productName': productName,
+      'variant': variant,
+      'price': price,
+      'discountAmount': discountAmount,
+      'status': status,
+    };
   }
 
-  // 自动生成 fromJson
-  factory OrderItem.fromJson(Map<String, dynamic> json) => 
-      _$OrderItemFromJson(json);
-
-  // 自动生成 toJson
-  Map<String, dynamic> toJson() => _$OrderItemToJson(this);
-} 
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    return OrderItem(
+      orderNumber: json['orderNumber'],
+      productName: json['productName'],
+      variant: json['variant'],
+      price: json['price'].toDouble(),
+      discountAmount: json['discountAmount']?.toDouble() ?? 0,
+      status: json['status'],
+    );
+  }
+}

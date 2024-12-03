@@ -59,10 +59,21 @@ let UserService = class UserService {
         }
         return user;
     }
-    async updateProfile(id, updateData) {
-        delete updateData.password;
-        await this.userRepository.update(id, updateData);
-        return this.findById(id);
+    async updateProfile(id, updateUserDto) {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (updateUserDto.email && updateUserDto.email !== user.email) {
+            const existingUser = await this.findByEmail(updateUserDto.email);
+            if (existingUser) {
+                throw new common_1.ConflictException('Email already exists');
+            }
+        }
+        Object.assign(user, updateUserDto);
+        await this.userRepository.save(user);
+        const { password, ...result } = user;
+        return result;
     }
     async changePassword(id, oldPassword, newPassword) {
         const user = await this.userRepository.findOne({ where: { id } });
