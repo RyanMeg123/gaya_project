@@ -21,6 +21,7 @@ export declare class UserController {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        notifications: import("../notification/entities/notification.entity").Notification[];
     }>;
     updateProfile(id: number, updateUserDto: UpdateUserDto): Promise<import("./entities/user.entity").User>;
     changePassword(req: any, changePasswordDto: ChangePasswordDto): Promise<{

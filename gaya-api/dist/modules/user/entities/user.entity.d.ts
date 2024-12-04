@@ -1,3 +1,4 @@
+import { Notification } from '../../notification/entities/notification.entity';
 export declare class User {
     id: number;
     name: string;
@@ -9,4 +10,5 @@ export declare class User {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    notifications: Notification[];
 }

@@ -5,9 +5,12 @@ import 'package:flutter_gaya_2/features/home/widgets/home_app_bar.dart';
 import 'package:flutter_gaya_2/features/home/widgets/list-card.dart';
 import 'package:flutter_gaya_2/features/home/widgets/search_box.dart';
 import 'package:flutter_gaya_2/models/tab_model.dart';
+import 'package:flutter_gaya_2/providers/notification_provider.dart';
+import 'package:flutter_gaya_2/providers/profile_provider.dart';
 import 'package:flutter_gaya_2/routes.dart';
 import 'package:flutter_gaya_2/services/api_service.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -32,6 +35,10 @@ class _HomeTabstate extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
     _loadDiscountedProducts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<NotificationProvider>(context, listen: false)
+          .loadNotifications();
+    });
   }
 
   @override
@@ -46,7 +53,8 @@ class _HomeTabstate extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       final products = await _apiService.getDiscountedProducts();
       if (!_mounted) return;
       setState(() {
-        _imgList = products.map((product) => product['imageUrl'] as String).toList();
+        _imgList =
+            products.map((product) => product['imageUrl'] as String).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -225,76 +233,85 @@ class _HomeTabstate extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).requestFocus(FocusNode());
-        },
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                children: [
-                  Column(
+    return Consumer<ProfileProvider>(
+      builder: (context, profileProvider, _) {
+        final profile = profileProvider.profile;
+        print('profile $profile');
+        return Scaffold(
+          body: GestureDetector(
+            onTap: () {
+              FocusScope.of(context).requestFocus(FocusNode());
+            },
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
                     children: [
-                      HomeTabAppBar(
-                        userName: 'Ryan',
-                        badgeCount: '30',
-                        onFavoritesTap: _onFavoritesTap,
-                        onNotificationsTap: _onNotificationsTap,
-                        onSearchChanged: updateSearchQuery,
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 1.w, vertical: 1.h),
-                        child: SearchBox(
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value;
-                            });
-                            _performSearch(value);
-                          },
-                        ),
-                      ),
-                      if (_isSearching)
-                        const Center(child: CircularProgressIndicator())
-                      else if (_searchResults.isNotEmpty)
-                        Container(
-                          height: 200.h,
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child: ListView.builder(
-                            itemCount: _searchResults.length,
-                            itemBuilder: (context, index) {
-                              final product = _searchResults[index];
-                              return ListTile(
-                                leading: Image.network(
-                                  product['imageUrl'],
-                                  width: 50.w,
-                                  height: 50.h,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Icon(Icons.image_not_supported,
-                                          size: 50.r),
-                                ),
-                                title: Text(product['name']),
-                                subtitle: Text('\$${product['originalPrice']}'),
-                                onTap: () => _handleSearchResultTap(product),
-                              );
-                            },
+                      Column(
+                        children: [
+                          HomeTabAppBar(
+                            userName: profile?.name ?? 'User',
+                            badgeCount: '30',
+                            onFavoritesTap: _onFavoritesTap,
+                            onNotificationsTap: _onNotificationsTap,
+                            onSearchChanged: updateSearchQuery,
                           ),
-                        ),
-                      CustomCarousel(
-                        imgList: _imgList,
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 1.w, vertical: 1.h),
+                            child: SearchBox(
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchQuery = value;
+                                });
+                                _performSearch(value);
+                              },
+                            ),
+                          ),
+                          if (_isSearching)
+                            const Center(child: CircularProgressIndicator())
+                          else if (_searchResults.isNotEmpty)
+                            Container(
+                              height: 200.h,
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: ListView.builder(
+                                itemCount: _searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final product = _searchResults[index];
+                                  return ListTile(
+                                    leading: Image.network(
+                                      product['imageUrl'],
+                                      width: 50.w,
+                                      height: 50.h,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) => Icon(
+                                              Icons.image_not_supported,
+                                              size: 50.r),
+                                    ),
+                                    title: Text(product['name']),
+                                    subtitle:
+                                        Text('\$${product['originalPrice']}'),
+                                    onTap: () =>
+                                        _handleSearchResultTap(product),
+                                  );
+                                },
+                              ),
+                            ),
+                          CustomCarousel(
+                            imgList: _imgList,
+                          ),
+                          ListCard(
+                            CardList: _listCard,
+                            onCardTap: _onCardTap,
+                          ),
+                          FeaturedProduct(products: _products)
+                        ],
                       ),
-                      ListCard(
-                        CardList: _listCard,
-                        onCardTap: _onCardTap,
-                      ),
-                      FeaturedProduct(products: _products)
                     ],
                   ),
-                ],
-              ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

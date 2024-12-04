@@ -21,7 +21,19 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
 
+      console.log('User found:', user);
+      console.log('Stored password hash:', user.password);
+      console.log('Provided password:', password);
+
+      if (!user.password) {
+        console.error('No password hash found for user');
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
       const isPasswordValid = await bcrypt.compare(password, user.password);
+      
+      console.log('Password comparison result:', isPasswordValid);
+
       if (!isPasswordValid) {
         throw new UnauthorizedException('Invalid credentials');
       }

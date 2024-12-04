@@ -114,7 +114,6 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
               child: Column(
                 children: [
                   FormCommon(
-                    formKey: _formKey,
                     emailController: emailController,
                     passwordController: passwordController,
                     passwordConfirmController: passwordConfirmController,

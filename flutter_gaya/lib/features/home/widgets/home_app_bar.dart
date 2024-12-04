@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import '../controllers/wishlist_controller.dart';
+import '../../../providers/notification_provider.dart';
+import '../../../routes.dart';
 
 class HomeTabAppBar extends StatelessWidget {
   final String userName;
@@ -99,37 +101,43 @@ class HomeTabAppBar extends StatelessWidget {
                     ),
                     SizedBox(width: 16.w),
                     // 通知按钮
-                    Stack(
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            MdiIcons.bell,
-                            color: Colors.black,
-                            size: 24.sp,
-                          ),
-                          onPressed: onNotificationsTap,
-                        ),
-                        if (badgeCount.isNotEmpty)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: EdgeInsets.all(4.w),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
+                    Consumer<NotificationProvider>(
+                      builder: (context, provider, child) {
+                        return Stack(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                MdiIcons.bell,
+                                color: Colors.black,
+                                size: 24.sp,
                               ),
-                              child: Text(
-                                badgeCount,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold,
+                              onPressed: () {
+                                Navigator.pushNamed(context, AppRoutes.notifications);
+                              },
+                            ),
+                            if (provider.unreadCount > 0)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: EdgeInsets.all(4.w),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    provider.unreadCount.toString(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                      ],
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

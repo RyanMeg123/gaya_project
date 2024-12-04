@@ -13,17 +13,19 @@ class ProfileProvider extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> loadUserProfile(int userId) async {
+    if (_isLoading) return;
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      print('Loading profile for user ID: $userId');
+      print('ProfileProvider: Loading profile for user ID: $userId');
       final data = await _apiService.getUserProfileById(userId.toString());
-      print('Profile data received: $data');
+      print('ProfileProvider: Profile data received: $data');
       _profile = UserProfile.fromJson(data);
     } catch (e) {
-      print('Error in loadUserProfile: $e');
+      print('ProfileProvider: Error loading profile: $e');
       _error = e.toString();
     } finally {
       _isLoading = false;

@@ -14,6 +14,7 @@ const auth_module_1 = require("./modules/auth/auth.module");
 const user_module_1 = require("./modules/user/user.module");
 const product_module_1 = require("./modules/product/product.module");
 const transaction_module_1 = require("./modules/transaction/transaction.module");
+const notification_module_1 = require("./modules/notification/notification.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -29,17 +30,13 @@ exports.AppModule = AppModule = __decorate([
                 useFactory: (configService) => ({
                     type: 'mysql',
                     host: '127.0.0.1',
-                    port: configService.get('mysql_server_port'),
-                    username: configService.get('root'),
-                    password: configService.get('password'),
-                    database: configService.get('gaya_db'),
+                    port: 3306,
+                    username: 'gaya_user',
+                    password: '123456',
+                    database: 'gaya_db',
                     entities: [__dirname + '/**/*.entity{.ts,.js}'],
                     synchronize: true,
-                    connectorPackage: 'mysql2',
-                    retryAttempts: 3,
-                    retryDelay: 3000,
                     logging: true,
-                    autoLoadEntities: true,
                 }),
                 inject: [config_1.ConfigService],
             }),
@@ -47,6 +44,7 @@ exports.AppModule = AppModule = __decorate([
             user_module_1.UserModule,
             product_module_1.ProductModule,
             transaction_module_1.TransactionModule,
+            notification_module_1.NotificationModule,
         ],
     })
 ], AppModule);

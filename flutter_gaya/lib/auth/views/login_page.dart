@@ -30,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       try {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        
+
         // 登录并获取响应
         final response = await _apiService.login(
           email: emailController.text,
@@ -39,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
 
         // 设置用户数据
         await userProvider.setUserData(response);
-        
+
         // 确保用户数据已初始化
         await userProvider.initializeUser();
 
@@ -89,11 +89,14 @@ class _LoginPageState extends State<LoginPage> {
           },
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.only(left: 29.w, right: 29.w),
-        child: Container(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 28.w),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SizedBox(height: 20.h),
+              // 只保留一个 Logo 和欢迎文本
               Column(
                 children: [
                   Image.asset(
@@ -105,9 +108,10 @@ class _LoginPageState extends State<LoginPage> {
                   Text(
                     'Welcome back!',
                     style: TextStyle(
-                        color: const Color.fromRGBO(34, 34, 34, 1),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24.sp),
+                      color: const Color.fromRGBO(34, 34, 34, 1),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24.sp,
+                    ),
                   ),
                   SizedBox(height: 9.h),
                   Text(
@@ -117,17 +121,19 @@ class _LoginPageState extends State<LoginPage> {
                       color: const Color.fromRGBO(106, 106, 106, 1),
                       fontSize: 14.sp,
                     ),
-                  )
+                  ),
                 ],
               ),
               SizedBox(height: 23.h),
-              Expanded(
+              Form(
+                key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     FormCommon(
-                        formKey: _formKey,
-                        emailController: emailController,
-                        passwordController: passwordController),
+                      emailController: emailController,
+                      passwordController: passwordController,
+                    ),
                     SizedBox(height: 24.h),
                     ElevatedButton(
                         onPressed: _submitForm,
@@ -234,7 +240,105 @@ class _LoginPageState extends State<LoginPage> {
                         )),
                   ],
                 ),
-              )
+              ),
+              // 社交登录按钮
+              SizedBox(height: 20.h),
+              Center(
+                child: Column(
+                  children: [
+                    // Facebook 登录按钮
+                    ElevatedButton(
+                      onPressed: () {
+                        print('Facebook login');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1.w,
+                        ),
+                        fixedSize: Size(318.w, 60.h),
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18.r),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16.w, vertical: 12.h),
+                      ),
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(right: 30.w),
+                            child: SizedBox(
+                              width: 40.w,
+                              child: Image.asset(
+                                  'assets/images/splash/iconfb.png'),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              "Login With Facebook",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+                    // Google 登录按钮
+                    ElevatedButton(
+                      onPressed: () {
+                        print('Google login');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1.w,
+                        ),
+                        fixedSize: Size(318.w, 60.h),
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18.r),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16.w, vertical: 12.h),
+                      ),
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(right: 30.w),
+                            child: SizedBox(
+                              width: 40.w,
+                              child: Image.asset(
+                                  'assets/images/splash/iconGoogle.png'),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              "Login With Google",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20.h), // 底部间距
             ],
           ),
         ),

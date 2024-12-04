@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 启用 CORS
+  // 允许所有来源的 CORS 请求
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -26,7 +26,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  // 监听所有网络接口
+  await app.listen(3000, '0.0.0.0');
   console.log(`Application is running on: http://localhost:3000`);
 }
 bootstrap();

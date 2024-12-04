@@ -99,4 +99,17 @@ class AuthService {
     await prefs.remove(_refreshTokenKey);
     await prefs.remove(_emailKey);
   }
+
+  Future<int?> getUserId() async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+      
+      final Map<String, dynamic> decodedToken = Jwt.parseJwt(token);
+      return decodedToken['sub'] as int;  // 从 JWT 中获取用户 ID
+    } catch (e) {
+      print('Error getting user ID: $e');
+      return null;
+    }
+  }
 }

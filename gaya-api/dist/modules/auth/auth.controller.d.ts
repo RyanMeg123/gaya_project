@@ -11,10 +11,4 @@ export declare class AuthController {
         accessToken: string;
         refreshToken: string;
     }>;
-    refreshToken(body: {
-        refreshToken: string;
-    }): Promise<{
-        accessToken: string;
-        refreshToken: string;
-    }>;
 }

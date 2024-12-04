@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ProductModule } from './modules/product/product.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -17,17 +18,13 @@ import { TransactionModule } from './modules/transaction/transaction.module';
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
         host: '127.0.0.1',
-        port: configService.get('mysql_server_port'),
-        username: configService.get('root'),
-        password: configService.get('password'),
-        database: configService.get('gaya_db'),
+        port: 3306,
+        username: 'gaya_user',
+        password: '123456',
+        database: 'gaya_db',
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
-        connectorPackage: 'mysql2',
-        retryAttempts: 3,
-        retryDelay: 3000,
         logging: true,
-        autoLoadEntities: true,
       }),
       inject: [ConfigService],
     }),
@@ -35,6 +32,7 @@ import { TransactionModule } from './modules/transaction/transaction.module';
     UserModule,
     ProductModule,
     TransactionModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}

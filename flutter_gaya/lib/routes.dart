@@ -14,6 +14,7 @@ import 'features/splash/views/splash_page.dart';
 import 'features/home/pages/wishlist_page.dart';
 import 'features/home/pages/featured_products_page.dart';
 import 'features/home/pages/checkout_page.dart';
+import 'features/notification/notification_page.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String wishlist = '/wishlist';
   static const String featuredProducts = '/featured_products';
   static const String checkout = '/checkout';
+  static const String notifications = '/notifications';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -134,6 +136,9 @@ class AppRoutes {
             },
           ),
         );
+
+      case notifications:
+        return MaterialPageRoute(builder: (_) => NotificationPage());
 
       default:
         return MaterialPageRoute(

@@ -26,7 +26,15 @@ let AuthService = class AuthService {
             if (!user) {
                 throw new common_1.UnauthorizedException('Invalid credentials');
             }
+            console.log('User found:', user);
+            console.log('Stored password hash:', user.password);
+            console.log('Provided password:', password);
+            if (!user.password) {
+                console.error('No password hash found for user');
+                throw new common_1.UnauthorizedException('Invalid credentials');
+            }
             const isPasswordValid = await bcrypt.compare(password, user.password);
+            console.log('Password comparison result:', isPasswordValid);
             if (!isPasswordValid) {
                 throw new common_1.UnauthorizedException('Invalid credentials');
             }

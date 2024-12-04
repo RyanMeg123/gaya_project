@@ -16,6 +16,7 @@ class UserProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _userData != null;
   String? get userEmail => _userData?['email'];
+  String? get userName => _userData?['name'];
   int? get userId {
     return _userData?['id'] as int?;
   }
@@ -82,7 +83,7 @@ class UserProvider with ChangeNotifier {
       );
 
       await setUserData(response);
-      
+
       // 登录成功后立即初始化用户数据
       await initializeUser();
     } catch (e) {

@@ -1,15 +1,34 @@
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'dart:io';
 import 'auth_service.dart';
 
 class ApiService {
   final Dio _dio = Dio();
-  final String baseUrl = 'http://localhost:3000'; // 开发环境使用localhost
+  late final String baseUrl;
   final AuthService _authService = AuthService();
 
   ApiService() {
+    // 根据平台设置不同的 baseUrl
+    if (Platform.isAndroid) {
+      baseUrl = 'http://192.168.50.184:3000';  // 使用你电脑的 IP 地址
+    } else if (Platform.isIOS) {
+      baseUrl = 'http://192.168.50.184:3000';  // 使用你电脑的 IP 地址
+    } else {
+      baseUrl = 'http://localhost:3000';  // 开发环境使用 localhost
+    }
+
     _dio.options.baseUrl = baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 5);
     _dio.options.receiveTimeout = const Duration(seconds: 3);
+
+    // 仅开发环境使用
+    (_dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate = 
+      (HttpClient client) {
+        client.badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+        return client;
+      };
 
     // 添加拦截器
     _dio.interceptors.add(
@@ -43,12 +62,11 @@ class ApiService {
 
     // 日志拦截器
     _dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-      logPrint: (obj) {
-        print('\x1B[32m${obj.toString()}\x1B[0m');
-      }
-    ));
+        requestBody: true,
+        responseBody: true,
+        logPrint: (obj) {
+          print('\x1B[32m${obj.toString()}\x1B[0m');
+        }));
   }
 
   // 用户注册
@@ -153,12 +171,13 @@ class ApiService {
   }
 
   // 获取特定分类的商品
-  Future<List<Map<String, dynamic>>> getProductsByCategory(String category) async {
+  Future<List<Map<String, dynamic>>> getProductsByCategory(
+      String category) async {
     try {
       final response = await _dio.get('/products', queryParameters: {
         'category': category,
       });
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((item) => item as Map<String, dynamic>).toList();
@@ -179,7 +198,8 @@ class ApiService {
     String? status,
   }) async {
     try {
-      print('API call - createTransaction: $orderNumber, $amount, $userId, $type, $status');
+      print(
+          'API call - createTransaction: $orderNumber, $amount, $userId, $type, $status');
       final response = await _dio.post('/transactions', data: {
         'orderNumber': orderNumber,
         'amount': amount,
@@ -188,7 +208,8 @@ class ApiService {
         'status': status ?? 'completed',
       });
 
-      print('Transaction API response: ${response.statusCode} - ${response.data}');
+      print(
+          'Transaction API response: ${response.statusCode} - ${response.data}');
 
       if (response.statusCode != 201) {
         throw Exception('Failed to create transaction: ${response.statusCode}');
@@ -197,7 +218,8 @@ class ApiService {
       print('Error creating transaction: $e');
       if (e is DioException) {
         print('DioError response: ${e.response?.data}');
-        throw Exception(e.response?.data['message'] ?? 'Failed to create transaction');
+        throw Exception(
+            e.response?.data['message'] ?? 'Failed to create transaction');
       }
       rethrow;
     }
@@ -207,7 +229,7 @@ class ApiService {
   Future<List<Map<String, dynamic>>> getUserTransactions(int userId) async {
     try {
       final response = await _dio.get('/transactions/user/$userId');
-      
+
       if (response.statusCode != 200) {
         throw Exception('Failed to get transactions');
       }
@@ -233,7 +255,8 @@ class ApiService {
     } catch (e) {
       print('Error getting user profile: $e');
       if (e is DioException) {
-        throw Exception(e.response?.data['message'] ?? 'Failed to get user profile');
+        throw Exception(
+            e.response?.data['message'] ?? 'Failed to get user profile');
       }
       throw Exception('Network error');
     }
@@ -253,7 +276,8 @@ class ApiService {
       if (e is DioException) {
         print('Response data: ${e.response?.data}');
         print('Request path: ${e.requestOptions.path}');
-        throw Exception(e.response?.data['message'] ?? 'Failed to get user profile');
+        throw Exception(
+            e.response?.data['message'] ?? 'Failed to get user profile');
       }
       throw Exception('Network error');
     }
@@ -261,7 +285,7 @@ class ApiService {
 
   // 更新用户资料
   Future<Map<String, dynamic>> updateUserProfile(
-    String userId, 
+    String userId,
     Map<String, dynamic> data,
   ) async {
     try {
@@ -277,9 +301,62 @@ class ApiService {
     } catch (e) {
       print('Error updating profile: $e');
       if (e is DioException) {
-        throw Exception(e.response?.data['message'] ?? 'Failed to update profile');
+        throw Exception(
+            e.response?.data['message'] ?? 'Failed to update profile');
       }
       throw Exception('Network error');
+    }
+  }
+
+  // 获取通知列表
+  Future<List<Map<String, dynamic>>> getNotifications() async {
+    try {
+      // 获取用户ID
+      final userId = await _authService.getUserId();
+      print('userId $userId');
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      final response = await _dio.get('/notifications');
+      print('Notifications API response: ${response.data}');
+
+      if (response.statusCode == 200) {
+        if (response.data is List) {
+          return List<Map<String, dynamic>>.from(response.data);
+        } else {
+          throw Exception('Invalid response format');
+        }
+      }
+      throw Exception('Failed to get notifications: ${response.statusCode}');
+    } catch (e) {
+      print('Error getting notifications: $e');
+      if (e is DioException) {
+        print('Response data: ${e.response?.data}');
+        print('Request path: ${e.requestOptions.path}');
+        print('Request headers: ${e.requestOptions.headers}');
+      }
+      rethrow;
+    }
+  }
+
+  // 标记通知为已读
+  Future<void> markNotificationAsRead(int notificationId) async {
+    try {
+      await _dio.patch('/notifications/$notificationId/read');
+    } catch (e) {
+      print('Error marking notification as read: $e');
+      rethrow;
+    }
+  }
+
+  // 标记所有通知为已读
+  Future<void> markAllNotificationsAsRead() async {
+    try {
+      await _dio.patch('/notifications/read-all');
+    } catch (e) {
+      print('Error marking all notifications as read: $e');
+      rethrow;
     }
   }
 }

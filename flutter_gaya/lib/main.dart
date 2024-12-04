@@ -10,6 +10,7 @@ import 'features/home/controllers/wishlist_controller.dart';
 import 'controllers/home_controller.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/notification_provider.dart';
 
 // Routes
 import 'routes.dart';
@@ -39,8 +40,19 @@ void main() async {
           create: (_) => HomeController(),
         ),
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
-        ChangeNotifierProvider<ProfileProvider>(
+        ChangeNotifierProxyProvider<UserProvider, ProfileProvider>(
           create: (_) => ProfileProvider(),
+          update: (context, userProvider, previous) {
+            if (userProvider.userId != null) {
+              print(
+                  'ProxyProvider: Loading profile for user ${userProvider.userId}');
+              previous?.loadUserProfile(userProvider.userId!);
+            }
+            return previous ?? ProfileProvider();
+          },
+        ),
+        ChangeNotifierProvider<NotificationProvider>(
+          create: (_) => NotificationProvider(),
         ),
       ],
       child: ScreenUtilInit(
@@ -62,51 +74,4 @@ void main() async {
       ),
     ),
   );
-}
-
-class MyGayaApp extends StatelessWidget {
-  const MyGayaApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: <ChangeNotifierProvider>[
-        ChangeNotifierProvider<AuthProvider>(
-          create: (_) => AuthProvider(),
-        ),
-        ChangeNotifierProvider<UserProvider>(
-          create: (_) => UserProvider(),
-        ),
-        ChangeNotifierProvider<CartController>(
-          create: (_) => CartController(),
-        ),
-        ChangeNotifierProvider<WishlistController>(
-          create: (_) => WishlistController(),
-        ),
-        ChangeNotifierProvider<HomeController>(
-          create: (_) => HomeController(),
-        ),
-        ChangeNotifierProvider<ProfileProvider>(
-          create: (_) => ProfileProvider(),
-        ),
-      ],
-      child: ScreenUtilInit(
-        designSize: const Size(375, 812),
-        minTextAdapt: true,
-        splitScreenMode: true,
-        builder: (context, child) {
-          return MaterialApp(
-            navigatorKey: navigatorKey, // 添加 navigator key
-            title: 'Gaya App',
-            theme: ThemeData(
-              primarySwatch: Colors.blue,
-              // 可以添加其他主题配置
-            ),
-            initialRoute: AppRoutes.splash,
-            onGenerateRoute: AppRoutes.generateRoute,
-          );
-        },
-      ),
-    );
-  }
 }
