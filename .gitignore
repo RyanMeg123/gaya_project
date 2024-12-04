@@ -12,6 +12,7 @@ gaya-api/node_modules/
 /dist
 /tmp
 /out-tsc
+gaya-api/dist/
 
 # Environment
 .env
