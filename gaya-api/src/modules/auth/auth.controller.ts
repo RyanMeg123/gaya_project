@@ -8,9 +8,11 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    console.log('Login attempt:', loginDto);
-    const result = await this.authService.login(loginDto);
-    console.log('Login result:', result);
-    return result;
+    return this.authService.login(loginDto);
+  }
+
+  @Post('refresh')
+  async refreshToken(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshToken(body.refreshToken);
   }
 } 

@@ -5,6 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:provider/provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/user_provider.dart';
+import '../../../routes.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -357,6 +358,46 @@ class _ProfileTabState extends State<ProfileTab> {
                             _buildMenuButton('Pending reviews', () {}),
                             _buildMenuButton('Faq', () {}),
                             _buildMenuButton('Help', () {}),
+                            _buildMenuButton('Logout', () async {
+                              // 显示确认对话框
+                              final shouldLogout = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Logout'),
+                                  content: const Text('Are you sure you want to logout?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      child: Text(
+                                        'Logout',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (shouldLogout == true) {
+                                // 执行登出操作
+                                await Provider.of<UserProvider>(context, listen: false).logout();
+                                
+                                if (mounted) {
+                                  // 导航到登录页面
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    AppRoutes.login,
+                                    (route) => false,
+                                  );
+                                }
+                              }
+                            }),
                           ],
                         ),
                       ),

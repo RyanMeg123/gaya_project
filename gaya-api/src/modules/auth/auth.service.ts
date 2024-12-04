@@ -13,44 +13,27 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
-    try {
-      const { email, password } = loginDto;
-      const user = await this.userService.findByEmail(email);
+    const { email, password } = loginDto;
+    const user = await this.userService.findByEmail(email);
 
-      if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      console.log('User found:', user);
-      console.log('Stored password hash:', user.password);
-      console.log('Provided password:', password);
-
-      if (!user.password) {
-        console.error('No password hash found for user');
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      
-      console.log('Password comparison result:', isPasswordValid);
-
-      if (!isPasswordValid) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      const tokens = await this.generateTokens(user);
-
-      return {
-        ...tokens,
-        user: {
-          id: user.id,
-          email: user.email,
-        },
-      };
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const tokens = await this.generateTokens(user);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    };
   }
 
   async generateTokens(user: User) {
